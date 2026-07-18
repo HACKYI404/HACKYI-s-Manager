@@ -9,6 +9,7 @@ import {
 import { sanitizeInput } from '../utils/validation.js';
 import { logger } from '../utils/logger.js';
 import { handleMusicVoiceState } from '../services/music/musicVoiceState.js';
+import { logEvent } from '../services/loggingService.js';
 
 const channelCreationCooldown = new Map();
 const VOICE_CREATE_COOLDOWN_MS = 2000;
@@ -223,6 +224,23 @@ userLimit: userLimit === 0 ? undefined : userLimit,
                 }
 
                 logger.info(`Created temporary voice channel ${tempChannel.name} (${tempChannel.id}) for user ${member.user.tag} in guild ${guild.name} with user limit ${userLimit}`);
+                try {
+                    await logEvent({
+                        client,
+                        guildId: guild.id,
+                        eventType: 'member.voice.join',
+                        data: {
+                            title: 'Voice Channel Created / Joined',
+                            lines: [
+                                `**User:** <@${member.id}>`,
+                                `**Channel:** <#${tempChannel.id}>`,
+                            ],
+                            footer: { text: 'Powered by HACKYI • 7/17/2026 Today at 12:15 PM' },
+                        },
+                    });
+                } catch (err) {
+                    logger.debug('Failed to send voice join log event:', err);
+                }
 
             } catch (error) {
                 logger.error(`Failed to create temporary channel for user ${member.user.tag} in guild ${guild.name}:`, error);
@@ -246,6 +264,22 @@ userLimit: userLimit === 0 ? undefined : userLimit,
                 await channel.delete('Temporary voice channel - empty');
 
                 logger.info(`Deleted temporary voice channel ${channel.name} (${channel.id}) in guild ${channel.guild.name}`);
+                try {
+                    await logEvent({
+                        client,
+                        guildId: guild.id,
+                        eventType: 'member.voice.leave',
+                        data: {
+                            title: 'Voice Channel Deleted / Left',
+                            lines: [
+                                `**Channel:** ${channel.name} (${channel.id})`,
+                            ],
+                            footer: { text: 'Powered by HACKYI • 7/17/2026 Today at 12:15 PM' },
+                        },
+                    });
+                } catch (err) {
+                    logger.debug('Failed to send voice leave log event:', err);
+                }
 
             } catch (error) {
                 logger.error(`Failed to delete temporary channel ${channel.id}:`, error);
