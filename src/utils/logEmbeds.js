@@ -161,7 +161,10 @@ export function buildStandardLogEmbed({
     );
   }
 
-  if (timestamp) embed.setTimestamp();
+  const footerContainsTime = footer?.text && /\d{1,2}:\d{2}\s*[AP]M/i.test(footer.text);
+  if (timestamp && !footerContainsTime) {
+    embed.setTimestamp();
+  }
 
   if (footer?.text) {
     embed.setFooter({

@@ -119,7 +119,7 @@ async function createTicketLogEmbed(guild, event) {
   let inlineFields = [];
   let fields = [];
   let author = null;
-  let footer = { text: 'Powered by HACKYI • 7/17/2026 Today at 12:15 PM' };
+  let footer = { text: 'Powered by HACKYI • 7/18/2026 7:22 PM' };
 
   switch (event.type) {
     case 'open':
