@@ -325,6 +325,8 @@ function createLogEmbed(guild, eventType, data) {
     inlineFields.push(...data.inlineFields);
   }
 
+  const timestamp = data.timestamp !== undefined ? data.timestamp : true;
+
   return buildStandardLogEmbed({
     color,
     title,
@@ -333,7 +335,7 @@ function createLogEmbed(guild, eventType, data) {
     inlineFields,
     fields: data.blockFields || [],
     author: data.author || null,
-    timestamp: true,
+    timestamp,
     footer: data.footer || { text: guild.name, iconURL: guild.iconURL({ dynamic: true }) || undefined },
   });
 }
