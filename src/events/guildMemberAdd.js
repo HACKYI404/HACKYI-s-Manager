@@ -1,8 +1,9 @@
-import { Events, EmbedBuilder, PermissionFlagsBits } from 'discord.js';
+import { Events, EmbedBuilder, AttachmentBuilder, PermissionFlagsBits } from 'discord.js';
 import { getColor } from '../config/bot.js';
 import { getGuildConfig } from '../services/guildConfig.js';
 import { getWelcomeConfig } from '../utils/database.js';
 import { formatWelcomeMessage } from '../utils/welcome.js';
+import { generateWelcomeCard } from '../utils/welcomeCard.js';
 import { logEvent, EVENT_TYPES } from '../services/loggingService.js';
 import { getServerCounters, updateCounter } from '../services/serverstatsService.js';
 import { setBirthday as dbSetBirthday } from '../utils/database.js';
@@ -37,45 +38,33 @@ export default {
                     formatData
                 );
 
-                const messageContent = welcomeConfig.welcomePing ? user.toString() : null;
+                // Welcome text content — use configured message or default
+                const textContent = `Hey ${user.toString()}, welcome to **${guild.name}**! 🎮`;
 
-                const embedTitle = formatWelcomeMessage(
-                    welcomeConfig.welcomeEmbed?.title || '🎉 Welcome!',
-                    formatData
-                );
-                const embedFooter = welcomeConfig.welcomeEmbed?.footer
-                    ? formatWelcomeMessage(welcomeConfig.welcomeEmbed.footer, formatData)
-                    : `Welcome to ${guild.name}!`;
+                // Try to generate the custom welcome card image
+                const avatarUrl = user.displayAvatarURL({ extension: 'png', size: 256 });
+                const cardBuffer = await generateWelcomeCard(avatarUrl, user.displayName || user.username, guild.memberCount);
 
-                const canEmbed = permissions.has(PermissionFlagsBits.EmbedLinks);
-
-                if (!canEmbed) {
+                if (cardBuffer) {
+                    const attachment = new AttachmentBuilder(cardBuffer, { name: 'welcome.png' });
                     await channel.send({
-                        content: messageContent || welcomeMessage
+                        content: textContent,
+                        files: [attachment],
                     });
                 } else {
-                    const embed = new EmbedBuilder()
-                        .setColor(welcomeConfig.welcomeEmbed?.color || getColor('success'))
-                        .setTitle(embedTitle)
-                        .setDescription(welcomeMessage)
-                        .setThumbnail(user.displayAvatarURL())
-                        .addFields(
-                            { name: 'User', value: `${user.tag} (${user.id})`, inline: true },
-                            { name: 'Member Count', value: guild.memberCount.toString(), inline: true }
-                        )
-                        .setTimestamp()
-                        .setFooter({ text: embedFooter });
-                    
-                    if (welcomeConfig.welcomeImage) {
-                        embed.setImage(welcomeConfig.welcomeImage);
-                    } else if (welcomeConfig.welcomeEmbed?.image?.url) {
-                        embed.setImage(welcomeConfig.welcomeEmbed.image.url);
+                    // Fallback to plain embed if card generation failed
+                    const canEmbed = permissions.has(PermissionFlagsBits.EmbedLinks);
+                    if (canEmbed) {
+                        const embed = new EmbedBuilder()
+                            .setColor(welcomeConfig.welcomeEmbed?.color || getColor('success'))
+                            .setTitle('🎉 Welcome!')
+                            .setDescription(welcomeMessage)
+                            .setThumbnail(user.displayAvatarURL())
+                            .setTimestamp();
+                        await channel.send({ content: textContent, embeds: [embed] });
+                    } else {
+                        await channel.send({ content: textContent });
                     }
-                    
-                    await channel.send({ 
-                        content: messageContent,
-                        embeds: [embed] 
-                    });
                 }
             }
         }
