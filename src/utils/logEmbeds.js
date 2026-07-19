@@ -161,14 +161,18 @@ export function buildStandardLogEmbed({
     );
   }
 
-  const footerContainsTime = footer?.text && /\d{1,2}:\d{2}\s*[AP]M/i.test(footer.text);
-  if (timestamp && !footerContainsTime) {
+  const footerText = footer?.text?.slice(0, 2048) || '';
+  const footerContainsTime = /\d{1,2}:\d{2}\s*[AP]M/i.test(footerText);
+  const footerContainsDate = /\b\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}\b/.test(footerText);
+  const footerLooksCustom = /Powered by\s+/i.test(footerText);
+
+  if (timestamp && !footerContainsTime && !footerContainsDate && !footerLooksCustom) {
     embed.setTimestamp();
   }
 
-  if (footer?.text) {
+  if (footerText) {
     embed.setFooter({
-      text: footer.text.slice(0, 2048),
+      text: footerText,
       iconURL: footer.iconURL || undefined,
     });
   }
