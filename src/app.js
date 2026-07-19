@@ -85,6 +85,18 @@ class TitanBot extends Client {
 
       initializeMusic(this);
       
+      const token = this.config.bot.token;
+      if (token) {
+        const looksNumeric = /^\d+$/.test(token);
+        if (looksNumeric) {
+          logger.warn('DISCORD_TOKEN appears to be numeric — this looks like an Application/Client ID, not a bot token.');
+        }
+        const masked = token.length > 12 ? `${token.slice(0,6)}...${token.slice(-6)}` : '********';
+        logger.info(`Discord token present: ${masked}`);
+      } else {
+        logger.warn('Discord token not found in environment (DISCORD_TOKEN or TOKEN).');
+      }
+
       startupLog('Logging into Discord...');
       await this.login(this.config.bot.token);
       startupLog('Discord login successful');

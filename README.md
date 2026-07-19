@@ -15,6 +15,24 @@
 - [Required Bot Intents](#bot-intents)
 - [Contributing](CONTRIBUTING.md)
 
+### Replit Deployment
+
+If you use Replit to host the bot, do NOT commit your bot token to the repository. Instead set secrets in Replit:
+
+- Add `DISCORD_TOKEN` = your bot token
+- Add `CLIENT_ID` = your application (client) id
+- Add `GUILD_ID` = your test server id (optional)
+
+Steps:
+
+1. Open the Replit project for this repository.
+2. Go to the Secrets / Environment variables panel (often in the Tools sidebar).
+3. Add the variables above (paste the bot token exactly, no quotes or trailing spaces).
+4. Restart the Replit run.
+
+This repository includes a `.replit` file that runs `npm start`, which executes `node src/app.js`.
+
+
 <a name="features-overview"></a>
 ## Features Overview
 
