@@ -107,15 +107,25 @@ export function setupPlayerHandler(client) {
             const embed = buildNowPlayingEmbed(track, player, guildData);
             const components = buildPlayerButtonRows(player, guildData);
             const channelId = guildData.playerChannelId || player.textChannel;
-            // If enabled, send a brief per-track notification (e.g. "Started playing ...")
+            // If enabled, send a brief per-track notification as a new message with footer
             if (guildData.announceEachTrack) {
                 try {
                     const channel = client.channels.cache.get(channelId);
                     if (channel) {
                         const title = track?.info?.title || 'track';
-                        const author = track?.info?.author;
-                        const byText = author ? ` by ${author}` : '';
-                        channel.send(`🟢 Started playing ${title}${byText}`).catch(() => null);
+                        const author = track?.info?.author || 'Unknown Artist';
+                        const duration = track?.info?.length ? `${Math.floor(track.info.length / 1000 / 60)}:${String(Math.floor((track.info.length / 1000) % 60)).padStart(2, '0')}` : 'Unknown';
+                        const timestamp = new Date().toLocaleTimeString();
+                        const notificationEmbed = {
+                            color: 0x1DB954,
+                            title: '🟢 Now Playing',
+                            description: `**${title}**\nby ${author}`,
+                            fields: [
+                                { name: 'Duration', value: duration, inline: true }
+                            ],
+                            footer: { text: `Powered by HACKYI • ${timestamp}` },
+                        };
+                        channel.send({ embeds: [notificationEmbed] }).catch(() => null);
                     }
                 } catch {
                     // ignore send failures

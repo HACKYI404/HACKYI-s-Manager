@@ -10,7 +10,7 @@ export class GuildMusicData {
         this.shuffle = false;
         this.previousTracks = [];
         this.twentyFourSeven = false;
-        this.announceEachTrack = false;
+        this.announceEachTrack = true;
         this.queuePages = new Map();
         this.updateInterval = null;
         this.idleTimeout = null;
