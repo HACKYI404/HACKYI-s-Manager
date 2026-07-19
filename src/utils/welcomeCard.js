@@ -9,7 +9,7 @@ const BG_PATH = path.join(__dirname, '../assets/welcome_bg.png');
 
 // Circle position measured from the background image
 const AVATAR_CENTER_X = 516;
-const AVATAR_CENTER_Y = 220;
+const AVATAR_CENTER_Y = 235;
 const AVATAR_RADIUS   = 65;   // fits inside the white ring (outer ring radius ~76)
 
 /**
