@@ -89,7 +89,6 @@ function isImportantFooter(footerText) {
 
 const originalSetDescription = EmbedBuilder.prototype.setDescription;
 const originalSetFooter = EmbedBuilder.prototype.setFooter;
-const originalSetTimestamp = EmbedBuilder.prototype.setTimestamp;
 
 EmbedBuilder.prototype.setDescription = function(description = '') {
   const descString = sanitizeEmbedText(description || '');
@@ -105,10 +104,6 @@ EmbedBuilder.prototype.setFooter = function(footer) {
 
   this[EMBED_FOOTER_SYMBOL] = footerText;
   return originalSetFooter.call(this, { text: footerText });
-};
-
-EmbedBuilder.prototype.setTimestamp = function() {
-  return this;
 };
 
 export function createEmbed({
