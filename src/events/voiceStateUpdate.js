@@ -149,7 +149,7 @@ if (now - lastCreation < VOICE_CREATE_COOLDOWN_MS) {
                                 `**From:** <#${oldState.channel.id}>`,
                                 `**To:** <#${newState.channel.id}>`,
                             ],
-                            footer: { text: 'Powered by HACKYI •' },
+                            footer: { text: 'Powered by HACKYI' },
                             timestamp: true,
                         },
                     });
@@ -255,7 +255,7 @@ userLimit: userLimit === 0 ? undefined : userLimit,
                                 `**User:** <@${member.id}>`,
                                 `**Channel:** <#${tempChannel.id}>`,
                             ],
-                            footer: { text: 'Powered by HACKYI •' },
+                            footer: { text: 'Powered by HACKYI' },
                             timestamp: true,
                         },
                     });
@@ -295,7 +295,7 @@ userLimit: userLimit === 0 ? undefined : userLimit,
                             lines: [
                                 `**Channel:** ${channel.name} (${channel.id})`,
                             ],
-                            footer: { text: 'Powered by HACKYI •' },
+                            footer: { text: 'Powered by HACKYI' },
                             timestamp: true,
                         },
                     });
