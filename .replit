@@ -16,6 +16,10 @@ MULTI_GUILD = "false"
 NODE_ENV = "development"
 PORT = "3000"
 WEB_HOST = "0.0.0.0"
+LAVALINK_HOST = "lavalink-2026-production-30d6.up.railway.app"
+LAVALINK_PORT = "443"
+LAVALINK_SEARCH_PLATFORM = "ytmsearch"
+LAVALINK_SECURE = "true"
 
 [workflows]
 runButton = "Project"
