@@ -39,7 +39,7 @@ export default {
                 );
 
                 // Welcome text content — use configured message or default
-                const textContent = `Hey ${user.toString()}, welcome to **${guild.name}**! 🎮`;
+                const textContent = `Hey ${user.toString()}, welcome to **${guild.name}**!`;
 
                 // Try to generate the custom welcome card image
                 const avatarUrl = user.displayAvatarURL({ extension: 'png', size: 256 });
