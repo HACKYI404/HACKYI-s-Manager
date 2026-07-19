@@ -107,6 +107,21 @@ export function setupPlayerHandler(client) {
             const embed = buildNowPlayingEmbed(track, player, guildData);
             const components = buildPlayerButtonRows(player, guildData);
             const channelId = guildData.playerChannelId || player.textChannel;
+            // If enabled, send a brief per-track notification (e.g. "Started playing ...")
+            if (guildData.announceEachTrack) {
+                try {
+                    const channel = client.channels.cache.get(channelId);
+                    if (channel) {
+                        const title = track?.info?.title || 'track';
+                        const author = track?.info?.author;
+                        const byText = author ? ` by ${author}` : '';
+                        channel.send(`🟢 Started playing ${title}${byText}`).catch(() => null);
+                    }
+                } catch {
+                    // ignore send failures
+                }
+            }
+
             await editOrSendPlayerMessage(client, guildData, channelId, embed, components);
             startUpdateInterval(client, player.guildId);
         } catch (error) {
