@@ -26,10 +26,71 @@ export default {
         if (newState.member.user.bot) return;
 
         const guildId = newState.guild.id;
-        const userId = newState.member.id;
+        const member = newState.member || oldState.member;
+        const userId = member.id;
         const cooldownKey = `${guildId}-${userId}`;
         cleanupCooldownEntries();
 
+        const thumbnail = member.user.displayAvatarURL({ dynamic: true, size: 256 });
+        const userLine = `**User:** <@${member.id}> (${member.user.username})`;
+
+        // General voice logging — fires for all channels regardless of join-to-create
+        try {
+            if (!oldState.channel && newState.channel) {
+                // Joined a voice channel
+                await logEvent({
+                    client,
+                    guildId,
+                    eventType: 'member.voice.join',
+                    data: {
+                        title: 'Joined Voice',
+                        lines: [
+                            userLine,
+                            `**Channel:** <#${newState.channel.id}> — ${newState.channel.name}`,
+                        ],
+                        thumbnail,
+                        footer: { text: 'Powered by HACKYI' },
+                    },
+                });
+            } else if (oldState.channel && !newState.channel) {
+                // Left a voice channel
+                await logEvent({
+                    client,
+                    guildId,
+                    eventType: 'member.voice.leave',
+                    data: {
+                        title: 'Left Voice',
+                        lines: [
+                            userLine,
+                            `**Channel:** <#${oldState.channel.id}> — ${oldState.channel.name}`,
+                        ],
+                        thumbnail,
+                        footer: { text: 'Powered by HACKYI' },
+                    },
+                });
+            } else if (oldState.channel && newState.channel && oldState.channel.id !== newState.channel.id) {
+                // Moved between voice channels
+                await logEvent({
+                    client,
+                    guildId,
+                    eventType: 'member.voice.move',
+                    data: {
+                        title: 'Moved Voice Channel',
+                        lines: [
+                            userLine,
+                            `**From:** <#${oldState.channel.id}> — ${oldState.channel.name}`,
+                            `**To:** <#${newState.channel.id}> — ${newState.channel.name}`,
+                        ],
+                        thumbnail,
+                        footer: { text: 'Powered by HACKYI' },
+                    },
+                });
+            }
+        } catch (err) {
+            logger.debug('Failed to send general voice log event:', err);
+        }
+
+        // Join-to-create logic — only runs when the feature is configured
         try {
             const config = await getJoinToCreateConfig(client, guildId);
 
@@ -136,26 +197,6 @@ if (now - lastCreation < VOICE_CREATE_COOLDOWN_MS) {
             if (config.triggerChannels.includes(newState.channel.id) && 
                 !config.triggerChannels.includes(oldState.channel?.id)) {
                 await handleVoiceJoin(client, newState, config);
-            } else {
-                try {
-                    await logEvent({
-                        client,
-                        guildId: oldState.guild.id,
-                        eventType: 'member.voice.move',
-                        data: {
-                            title: 'Moved Voice Channel',
-                            lines: [
-                                `**User:** <@${oldState.member.id}>`,
-                                `**From:** <#${oldState.channel.id}>`,
-                                `**To:** <#${newState.channel.id}>`,
-                            ],
-                            footer: { text: 'Powered by HACKYI' },
-                            timestamp: true,
-                        },
-                    });
-                } catch (err) {
-                    logger.debug('Failed to send voice move log event:', err);
-                }
             }
         }
 
