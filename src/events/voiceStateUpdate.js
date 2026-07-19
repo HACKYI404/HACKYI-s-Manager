@@ -136,6 +136,26 @@ if (now - lastCreation < VOICE_CREATE_COOLDOWN_MS) {
             if (config.triggerChannels.includes(newState.channel.id) && 
                 !config.triggerChannels.includes(oldState.channel?.id)) {
                 await handleVoiceJoin(client, newState, config);
+            } else {
+                try {
+                    await logEvent({
+                        client,
+                        guildId: oldState.guild.id,
+                        eventType: 'member.voice.move',
+                        data: {
+                            title: 'Moved Voice Channel',
+                            lines: [
+                                `**User:** <@${oldState.member.id}>`,
+                                `**From:** <#${oldState.channel.id}>`,
+                                `**To:** <#${newState.channel.id}>`,
+                            ],
+                            footer: { text: 'Powered by HACKYI •' },
+                            timestamp: true,
+                        },
+                    });
+                } catch (err) {
+                    logger.debug('Failed to send voice move log event:', err);
+                }
             }
         }
 
