@@ -235,8 +235,8 @@ userLimit: userLimit === 0 ? undefined : userLimit,
                                 `**User:** <@${member.id}>`,
                                 `**Channel:** <#${tempChannel.id}>`,
                             ],
-                            footer: { text: 'Powered by HACKYI • 7/18/2026' },
-                            timestamp: false,
+                            footer: { text: 'Powered by HACKYI •' },
+                            timestamp: true,
                         },
                     });
                 } catch (err) {
@@ -275,8 +275,8 @@ userLimit: userLimit === 0 ? undefined : userLimit,
                             lines: [
                                 `**Channel:** ${channel.name} (${channel.id})`,
                             ],
-                            footer: { text: 'Powered by HACKYI • 7/18/2026' },
-                            timestamp: false,
+                            footer: { text: 'Powered by HACKYI •' },
+                            timestamp: true,
                         },
                     });
                 } catch (err) {

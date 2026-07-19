@@ -161,18 +161,13 @@ export function buildStandardLogEmbed({
     );
   }
 
-  const footerText = footer?.text?.slice(0, 2048) || '';
-  const footerContainsTime = /\d{1,2}:\d{2}\s*[AP]M/i.test(footerText);
-  const footerContainsDate = /\b\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}\b/.test(footerText);
-  const footerLooksCustom = /Powered by\s+/i.test(footerText);
-
-  if (timestamp && !footerContainsTime && !footerContainsDate && !footerLooksCustom) {
+  if (timestamp) {
     embed.setTimestamp();
   }
 
-  if (footerText) {
+  if (footer?.text) {
     embed.setFooter({
-      text: footerText,
+      text: footer.text.slice(0, 2048),
       iconURL: footer.iconURL || undefined,
     });
   }
