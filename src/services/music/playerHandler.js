@@ -88,6 +88,36 @@ export function setupPlayerHandler(client) {
         logger.info(`Lavalink node "${node.name}" reconnected.`);
     });
 
+    function buildSpotifyLink(track) {
+        const uri = track?.info?.uri;
+        if (!uri) {
+            return null;
+        }
+
+        if (typeof uri !== 'string') {
+            return null;
+        }
+
+        if (uri.startsWith('spotify:')) {
+            const parts = uri.split(':');
+            if (parts.length >= 3) {
+                const type = parts[1];
+                const id = parts[2];
+                return `https://open.spotify.com/${type}/${id}`;
+            }
+        }
+
+        if (uri.startsWith('https://') || uri.startsWith('http://')) {
+            return uri;
+        }
+
+        return null;
+    }
+
+    function escapeMarkdownText(value) {
+        return String(value).replace(/([\[\]\(\)])/g, '\\$1');
+    }
+
     client.riffy.on('trackStart', async (player, track) => {
         try {
             const guildData = getGuildMusicData(player.guildId);
@@ -112,12 +142,17 @@ export function setupPlayerHandler(client) {
                 try {
                     const channel = client.channels.cache.get(channelId);
                     if (channel) {
-                        const title = track?.info?.title || 'track';
-                        const author = track?.info?.author || 'Unknown Artist';
+                        const title = escapeMarkdownText(track?.info?.title || 'track');
+                        const author = escapeMarkdownText(track?.info?.author || 'Unknown Artist');
                         const timestamp = new Date().toLocaleTimeString();
+                        const spotifyLink = buildSpotifyLink(track);
+                        const trackText = spotifyLink
+                            ? `[${title} by ${author}](${spotifyLink})`
+                            : `**${title}** by ${author}`;
+                        const spotifyEmoji = '<:spotify:1528470914579042365>';
                         const notificationEmbed = {
                             color: 0x1DB954,
-                            description: `<:spotify:1528470914579042365> Started playing **${title}** by ${author}`,
+                            description: `${spotifyEmoji} Started playing ${trackText}`,
                             footer: { text: `${timestamp}` },
                         };
                         channel.send({ embeds: [notificationEmbed] }).catch(() => null);
