@@ -90,11 +90,7 @@ export function setupPlayerHandler(client) {
 
     function buildSpotifyLink(track) {
         const uri = track?.info?.uri;
-        if (!uri) {
-            return null;
-        }
-
-        if (typeof uri !== 'string') {
+        if (!uri || typeof uri !== 'string') {
             return null;
         }
 
@@ -114,8 +110,8 @@ export function setupPlayerHandler(client) {
         return null;
     }
 
-    function escapeMarkdownText(value) {
-        return String(value).replace(/([\[\]\(\)])/g, '\\$1');
+    function getTrackThumbnail(track) {
+        return track?.info?.artworkUrl || track?.info?.thumbnail || null;
     }
 
     client.riffy.on('trackStart', async (player, track) => {
@@ -137,22 +133,24 @@ export function setupPlayerHandler(client) {
             const embed = buildNowPlayingEmbed(track, player, guildData);
             const components = buildPlayerButtonRows(player, guildData);
             const channelId = guildData.playerChannelId || player.textChannel;
-            // If enabled, send a brief per-track notification as a new message
             if (guildData.announceEachTrack) {
                 try {
                     const channel = client.channels.cache.get(channelId);
                     if (channel) {
-                        const title = escapeMarkdownText(track?.info?.title || 'track');
-                        const author = escapeMarkdownText(track?.info?.author || 'Unknown Artist');
+                        const title = track?.info?.title || 'Unknown track';
+                        const author = track?.info?.author || 'Unknown Artist';
                         const timestamp = new Date().toLocaleTimeString();
                         const spotifyLink = buildSpotifyLink(track);
-                        const trackText = spotifyLink
-                            ? `[${title} by ${author}](${spotifyLink})`
-                            : `**${title}** by ${author}`;
-                        const spotifyEmoji = '<:spotify:1528470914579042365>';
                         const notificationEmbed = {
                             color: 0x1DB954,
-                            description: `${spotifyEmoji} Started playing ${trackText}`,
+                            author: {
+                                name: 'Spotify',
+                                icon_url: 'https://upload.wikimedia.org/wikipedia/commons/8/84/Spotify_icon.svg',
+                            },
+                            title,
+                            url: spotifyLink || undefined,
+                            description: `by ${author}`,
+                            thumbnail: { url: getTrackThumbnail(track) },
                             footer: { text: `${timestamp}` },
                         };
                         channel.send({ embeds: [notificationEmbed] }).catch(() => null);
@@ -160,6 +158,7 @@ export function setupPlayerHandler(client) {
                 } catch {
                     // ignore send failures
                 }
+                return;
             }
 
             await editOrSendPlayerMessage(client, guildData, channelId, embed, components);
