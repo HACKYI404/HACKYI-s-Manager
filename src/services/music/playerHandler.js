@@ -156,8 +156,8 @@ export function setupPlayerHandler(client) {
                         const spotifyLink = buildSpotifyLink(track);
                         const footerText = formatFooterTimestamp(new Date());
                         const trackText = spotifyLink
-                            ? `🎵 **[${title}](${spotifyLink})**`
-                            : `🎵 **${title}**`;
+                            ? `<:spotify:1528631885507330098> **[${title}](${spotifyLink})**`
+                            : `<:spotify:1528631885507330098> **${title}**`;
                         const notificationEmbed = {
                             color: 0x1DB954,
                             description: `${trackText}\nby ${author}`,
