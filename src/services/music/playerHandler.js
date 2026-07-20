@@ -114,6 +114,20 @@ export function setupPlayerHandler(client) {
         return track?.info?.artworkUrl || track?.info?.thumbnail || null;
     }
 
+    function formatFooterTimestamp(date) {
+        const time = date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
+        const today = new Date();
+        if (
+            date.getDate() === today.getDate()
+            && date.getMonth() === today.getMonth()
+            && date.getFullYear() === today.getFullYear()
+        ) {
+            return `Powered by HACKYI • Today at ${time}`;
+        }
+        const dateString = date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+        return `Powered by HACKYI • ${dateString} at ${time}`;
+    }
+
     client.riffy.on('trackStart', async (player, track) => {
         try {
             const guildData = getGuildMusicData(player.guildId);
@@ -139,19 +153,19 @@ export function setupPlayerHandler(client) {
                     if (channel) {
                         const title = track?.info?.title || 'Unknown track';
                         const author = track?.info?.author || 'Unknown Artist';
-                        const timestamp = new Date().toLocaleTimeString();
                         const spotifyLink = buildSpotifyLink(track);
+                        const footerText = formatFooterTimestamp(new Date());
                         const notificationEmbed = {
                             color: 0x1DB954,
                             author: {
-                                name: 'Spotify',
+                                name: '<:spotify:1528631885507330098> Spotify',
                                 icon_url: 'https://upload.wikimedia.org/wikipedia/commons/8/84/Spotify_icon.svg',
                             },
                             title,
                             url: spotifyLink || undefined,
                             description: `by ${author}`,
                             thumbnail: { url: getTrackThumbnail(track) },
-                            footer: { text: `${timestamp}` },
+                            footer: { text: footerText },
                         };
                         channel.send({ embeds: [notificationEmbed] }).catch(() => null);
                     }
