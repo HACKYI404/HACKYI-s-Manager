@@ -155,15 +155,12 @@ export function setupPlayerHandler(client) {
                         const author = track?.info?.author || 'Unknown Artist';
                         const spotifyLink = buildSpotifyLink(track);
                         const footerText = formatFooterTimestamp(new Date());
+                        const trackText = spotifyLink
+                            ? `🎵 **[${title}](${spotifyLink})**`
+                            : `🎵 **${title}**`;
                         const notificationEmbed = {
                             color: 0x1DB954,
-                            author: {
-                                name: '<:spotify:1528631885507330098> Spotify',
-                                icon_url: 'https://upload.wikimedia.org/wikipedia/commons/8/84/Spotify_icon.svg',
-                            },
-                            title,
-                            url: spotifyLink || undefined,
-                            description: `by ${author}`,
+                            description: `${trackText}\nby ${author}`,
                             thumbnail: { url: getTrackThumbnail(track) },
                             footer: { text: footerText },
                         };
