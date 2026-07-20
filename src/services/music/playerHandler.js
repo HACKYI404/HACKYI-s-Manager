@@ -115,16 +115,18 @@ export function setupPlayerHandler(client) {
     }
 
     function formatFooterTimestamp(date) {
-        const time = date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
+        const time = date.toLocaleTimeString('en-US', { timeZone: 'Asia/Colombo', hour: 'numeric', minute: '2-digit', hour12: true });
         const today = new Date();
+        const sriLankaToday = new Date(today.toLocaleString('en-US', { timeZone: 'Asia/Colombo' }));
+
         if (
-            date.getDate() === today.getDate()
-            && date.getMonth() === today.getMonth()
-            && date.getFullYear() === today.getFullYear()
+            date.getDate() === sriLankaToday.getDate()
+            && date.getMonth() === sriLankaToday.getMonth()
+            && date.getFullYear() === sriLankaToday.getFullYear()
         ) {
             return `Powered by HACKYI • Today at ${time}`;
         }
-        const dateString = date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+        const dateString = date.toLocaleDateString('en-US', { timeZone: 'Asia/Colombo', month: 'short', day: 'numeric', year: 'numeric' });
         return `Powered by HACKYI • ${dateString} at ${time}`;
     }
 
