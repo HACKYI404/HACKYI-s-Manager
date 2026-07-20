@@ -1,4 +1,4 @@
-import { Events } from 'discord.js';
+import { Events, PermissionsBitField } from 'discord.js';
 import { logger } from '../utils/logger.js';
 import { getLevelingConfig, getUserLevelData } from '../services/leveling.js';
 import { addXp } from '../services/xpSystem.js';
@@ -11,6 +11,7 @@ import { getGuildConfig } from '../services/guildConfig.js';
 import { enforceAbuseProtection, formatCooldownDuration } from '../utils/abuseProtection.js';
 import { createEmbed } from '../utils/embeds.js';
 import { isCommandEnabled } from '../services/commandAccessService.js';
+import { ModerationService } from '../services/moderationService.js';
 import {
   getCountingGameConfig,
   saveCountingGameConfig,
@@ -20,12 +21,147 @@ import {
 
 const MESSAGE_XP_RATE_LIMIT_ATTEMPTS = 12;
 const MESSAGE_XP_RATE_LIMIT_WINDOW_MS = 10000;
+const SPAM_TRACK_WINDOW_MS = 20_000;
+const SPAM_REPEAT_THRESHOLD = 3;
+const SPAM_CHANNEL_THRESHOLD = 2;
+const SPAM_TIMEOUT_MS = 15 * 60 * 1000;
+const spamCache = new Map();
+
+async function handleSpamMessage(message, client) {
+  if (message.author.bot || !message.guild) {
+    return false;
+  }
+
+  const member = message.member || await message.guild.members.fetch(message.author.id).catch(() => null);
+  if (!member) {
+    return false;
+  }
+
+  if (member.permissions.has(PermissionsBitField.Flags.Administrator)) {
+    return false;
+  }
+
+  if (member.permissions.has(PermissionsBitField.Flags.ManageMessages)) {
+    return false;
+  }
+
+  if (message.content.trim().length === 0) {
+    return false;
+  }
+
+  const guildKey = `${message.guild.id}:${message.author.id}`;
+  const normalized = message.content.trim().toLowerCase();
+  const now = Date.now();
+
+  const entries = spamCache.get(guildKey) || [];
+  const freshEntries = entries.filter((entry) => now - entry.timestamp <= SPAM_TRACK_WINDOW_MS);
+  freshEntries.push({
+    messageId: message.id,
+    channelId: message.channel.id,
+    content: normalized,
+    timestamp: now,
+  });
+  spamCache.set(guildKey, freshEntries);
+
+  const sameContent = freshEntries.filter((entry) => entry.content === normalized);
+  const distinctChannels = new Set(sameContent.map((entry) => entry.channelId));
+
+  if (sameContent.length >= SPAM_REPEAT_THRESHOLD && distinctChannels.size >= SPAM_CHANNEL_THRESHOLD) {
+    const deletePromises = sameContent.map(async (entry) => {
+      try {
+        const channel = await client.channels.fetch(entry.channelId).catch(() => null);
+        if (!channel?.isTextBased?.()) {
+          return;
+        }
+        const msg = await channel.messages.fetch(entry.messageId).catch(() => null);
+        if (msg) {
+          await msg.delete().catch(() => {});
+        }
+      } catch {
+        // ignore failed deletes
+      }
+    });
+
+    await Promise.all(deletePromises);
+
+    let timedOut = false;
+    try {
+      const botMember = message.guild.members.me || await message.guild.members.fetch(client.user.id).catch(() => null);
+      if (botMember && member.moderatable) {
+        await ModerationService.timeoutUser({
+          guild: message.guild,
+          member,
+          moderator: botMember,
+          durationMs: SPAM_TIMEOUT_MS,
+          reason: 'Auto-moderation: repeated spam across channels',
+        });
+        timedOut = true;
+      }
+    } catch (error) {
+      logger.warn('Failed to timeout spammer:', error);
+    }
+
+    const notice = createEmbed({
+      title: 'Auto moderation',
+      description: timedOut
+        ? `Deleted repeated spam from <@${message.author.id}> and timed them out for 15 minutes.`
+        : `Deleted repeated spam from <@${message.author.id}>. Could not apply timeout.`,
+      color: 'error',
+    });
+
+    await message.channel.send({ embeds: [notice] }).catch(() => {});
+    return true;
+  }
+
+  const mentionCount = message.mentions.users.size + message.mentions.roles.size + (message.mentions.everyone ? 1 : 0);
+  if (mentionCount >= 4) {
+    try {
+      await message.delete().catch(() => {});
+    } catch {
+      // ignore
+    }
+
+    let timedOut = false;
+    try {
+      const botMember = message.guild.members.me || await message.guild.members.fetch(client.user.id).catch(() => null);
+      if (botMember && member.moderatable) {
+        await ModerationService.timeoutUser({
+          guild: message.guild,
+          member,
+          moderator: botMember,
+          durationMs: SPAM_TIMEOUT_MS,
+          reason: 'Auto-moderation: mention spam',
+        });
+        timedOut = true;
+      }
+    } catch (error) {
+      logger.warn('Failed to timeout mention spammer:', error);
+    }
+
+    const notice = createEmbed({
+      title: 'Auto moderation',
+      description: timedOut
+        ? `Deleted a mention spam message from <@${message.author.id}> and timed them out for 15 minutes.`
+        : `Deleted a mention spam message from <@${message.author.id}>. Could not apply timeout.`,
+      color: 'error',
+    });
+    await message.channel.send({ embeds: [notice] }).catch(() => {});
+    return true;
+  }
+
+  return false;
+}
 
 export default {
   name: Events.MessageCreate,
   async execute(message, client) {
     try {
       if (message.author.bot || !message.guild) return;
+
+      const spamProcessed = await handleSpamMessage(message, client);
+      if (spamProcessed) {
+        return;
+      }
 
       logger.debug(`Message received from ${message.author.tag}: ${message.content}`);
 
