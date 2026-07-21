@@ -12,6 +12,7 @@ import {
     seekTrack,
     removeFromQueue,
     moveInQueue,
+    jumpTrack,
     clearQueue,
     setTwentyFourSeven,
     leaveVoiceChannel,
@@ -69,6 +70,14 @@ export default {
                 .setDescription('Seek to a position in the current track')
                 .addIntegerOption((opt) =>
                     opt.setName('seconds').setDescription('Position in seconds').setRequired(true).setMinValue(0),
+                ),
+        )
+        .addSubcommand((sub) =>
+            sub
+                .setName('jump')
+                .setDescription('Jump to a specific queue position and play it')
+                .addIntegerOption((opt) =>
+                    opt.setName('position').setDescription('Queue position to jump to (1 = first in queue)').setRequired(true).setMinValue(1),
                 ),
         )
         .addSubcommand((sub) =>
@@ -148,6 +157,11 @@ export default {
                 }
                 case 'seek': {
                     const embed = await seekTrack(client, interaction, interaction.options.getInteger('seconds'));
+                    await replyMusicSuccess(interaction, embed);
+                    break;
+                }
+                case 'jump': {
+                    const embed = await jumpTrack(client, interaction, interaction.options.getInteger('position'));
                     await replyMusicSuccess(interaction, embed);
                     break;
                 }

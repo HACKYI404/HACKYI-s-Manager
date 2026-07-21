@@ -385,6 +385,47 @@ export async function moveInQueue(client, interaction, from, to) {
     return successEmbed('Moved', `Moved **${track.info?.title || 'track'}** to position #${to}.`);
 }
 
+export async function jumpTrack(client, interaction, position) {
+    const player = getPlayer(client, interaction.guild.id);
+    if (!player) {
+        throw new TitanBotError('No player', ErrorTypes.USER_INPUT, 'No active music player.');
+    }
+    if (!player.queue?.length) {
+        throw new TitanBotError('Empty queue', ErrorTypes.USER_INPUT, 'The queue is empty.');
+    }
+    assertCanControl(interaction.member, player);
+
+    const idx = position - 1;
+    if (idx < 0 || idx >= player.queue.length) {
+        throw new TitanBotError('Invalid index', ErrorTypes.USER_INPUT, `Invalid queue position. Queue has ${player.queue.length} track(s).`);
+    }
+
+    // If the requested position is the first in queue and nothing special, just skip
+    if (idx === 0) {
+        // move nothing, just stop current to play next
+        if (!player.current) {
+            throw new TitanBotError('No player', ErrorTypes.USER_INPUT, 'Nothing is playing right now.');
+        }
+        const title = player.current.info?.title || 'Unknown';
+        player.stop();
+        return successEmbed('Jumped', `Jumped to position #${position} and started playback.`);
+    }
+
+    // Remove the requested track and insert it at front of queue
+    const track = player.queue[idx];
+    player.queue.remove(idx);
+    player.queue.splice(0, 0, track);
+
+    // Stop current track so player advances to the new first item
+    if (player.current) {
+        player.stop();
+    } else {
+        player.play();
+    }
+
+    return successEmbed('Jumped', `Moved **${track.info?.title || 'track'}** to play next.`);
+}
+
 export async function clearQueue(client, interaction) {
     const player = getPlayer(client, interaction.guild.id);
     if (!player?.queue?.length) {
